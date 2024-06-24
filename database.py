@@ -7,3 +7,4 @@ engine = create_engine('postgresql://postgres:root@localhost/pizza_database',
 
 Base=declarative_base()
 Session = sessionmaker()
+
