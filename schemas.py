@@ -28,3 +28,31 @@ class Settings(BaseModel):
 class LoginModel(BaseModel):
     username:str
     password:str
+
+    class Config:
+        orm_mode = True
+        schema_extra = {
+            "example": {
+                "username": "johndoe",
+                "password": "password"
+            }
+        }
+
+class OrderModel(BaseModel):
+    id:Optional[int] = None
+    quantity:int
+    order_status:Optional[str] = "PENDING"
+    pizza_size:Optional[str] = "SMALL"
+    user_id:Optional[int] = None
+
+    class Config:
+        orm_mode = True
+        schema_extra = {
+            "example": {
+                "quantity": 1,
+                "order_status": "PENDING",
+                "pizza_size":"SMALL",
+                "user_id":1
+            }
+        }
+
