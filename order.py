@@ -84,3 +84,96 @@ async def get_all_orders(Authorize:AuthJWT=Depends()):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="You are not a Superuser"
     )
+
+@order_router.get('/order/{id}',status_code=status.HTTP_200_OK)
+async def get_order_based_on_user_id(id:int,Authorize:AuthJWT=Depends()):
+    try:
+        Authorize.jwt_required()
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Token"
+        )
+    
+    current_user = Authorize.get_jwt_subject()
+
+    user= session.query(User).filter(User.username==current_user).first()
+
+    if user.is_staff:
+        orders = session.query(Order).filter(Order.id==id).first()
+
+        return jsonable_encoder(orders)
+    
+    raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="You are not a Superuser"
+    )
+
+
+@order_router.get('/user/order',status_code=status.HTTP_200_OK)
+async def get_current_users_order(Authorize:AuthJWT=Depends()):
+    try:
+        Authorize.jwt_required()
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Token"
+        )
+    
+    current_user = Authorize.get_jwt_subject()
+
+    user= session.query(User).filter(User.username==current_user).first()
+
+    orders = session.query(Order).filter(Order.user_id==user.id).first()
+
+    return jsonable_encoder(orders)
+
+@order_router.get('/user/order/{id}',status_code=status.HTTP_200_OK,response_model=OrderModel)
+def get_current_users_order(id:int,Authorize:AuthJWT=Depends()):
+    try:
+        Authorize.jwt_required()
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Token"
+        )
+    
+    current_user = Authorize.get_jwt_subject()
+
+    user= session.query(User).filter(User.username==current_user).first()
+
+    orders = user.orders
+
+    for order in orders:
+        if order.id == id:
+            return order
+        
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="No order with this id found")
+
+
+@order_router.get('/order/update/{id}',status_code=status.HTTP_200_OK)
+def update_order(id:int,order:OrderModel,Authorize:AuthJWT=Depends()):
+    try:
+        Authorize.jwt_required()
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Token"
+        )
+    
+    current_user = Authorize.get_jwt_subject()
+
+    order_to_update = session.query(Order).filter(Order.id==id).first()
+
+    order_to_update.quantity = order.quantity
+    order_to_update.pizza_size = order.pizza_size
+
+    session.commit()
+
+    return jsonable_encoder(order_to_update)
+
