@@ -14,6 +14,22 @@ session = Session(bind=engine)
 
 @auth_router.get('/')
 async def hello(Authorize:AuthJWT=Depends()):
+    """
+    Returns a message if the token is valid.
+
+    Args:
+      Authorize (AuthJWT): The authorization token.
+
+    Raises:
+      HTTPException: If the token is invalid.
+
+    Returns:
+      dict: A message if the token is valid.
+
+    Examples:
+      >>> hello(Authorize)
+      {"message":"Hello World"}
+    """
     try:
         Authorize.jwt_required()
 
@@ -25,6 +41,22 @@ async def hello(Authorize:AuthJWT=Depends()):
 
 @auth_router.post('/signup',response_model=SignupModel,status_code=status.HTTP_201_CREATED)
 async def signup(user:SignupModel):
+    """
+    Creates a new user.
+
+    Args:
+      user (SignupModel): The user's information.
+
+    Returns:
+      User: The new user.
+
+    Raises:
+      HTTPException: If the email or username already exists.
+
+    Examples:
+      >>> signup(user)
+      User(username, email, password, is_active, is_staff)
+    """
     db_email = session.query(User).filter(User.email==user.email).first()
     if db_email is not None:
         return HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
@@ -55,6 +87,23 @@ async def signup(user:SignupModel):
 
 @auth_router.post('/login',status_code=200)
 async def login(user:LoginModel,Authorize:AuthJWT=Depends()):
+    """
+    Logs in a user.
+
+    Args:
+      user (LoginModel): The user's login information.
+      Authorize (AuthJWT): The authorization token.
+
+    Returns:
+      dict: The access and refresh tokens.
+
+    Raises:
+      HTTPException: If the username or password is invalid.
+
+    Examples:
+      >>> login(user, Authorize)
+      {"access_token":access_token, "refresh_token":refresh_token}
+    """
     db_user = session.query(User).filter(User.username==user.username).first()
 
     if db_user and check_password_hash(db_user.password,user.password):
@@ -75,6 +124,22 @@ async def login(user:LoginModel,Authorize:AuthJWT=Depends()):
 
 @auth_router.get('/refresh')
 async def refresh_token(Authorize:AuthJWT=Depends()):
+    """
+    Refreshes the access token.
+
+    Args:
+      Authorize (AuthJWT): The authorization token.
+
+    Raises:
+      HTTPException: If the refresh token is invalid.
+
+    Returns:
+      dict: The new access token.
+
+    Examples:
+      >>> refresh_token(Authorize)
+      {"access":access_token}
+    """
     try:
         Authorize.jwt_refresh_token_required()
 

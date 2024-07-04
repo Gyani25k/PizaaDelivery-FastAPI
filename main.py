@@ -8,6 +8,12 @@ app=FastAPI()
 
 @AuthJWT.load_config
 def get_config():
+    """
+    Loads the configuration settings for the app.
+
+    Returns:
+      Settings: The configuration settings for the app.
+    """
     return Settings()
 
 app.include_router(auth_router)
