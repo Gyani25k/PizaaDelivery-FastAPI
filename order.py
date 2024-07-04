@@ -2,7 +2,7 @@ from fastapi import APIRouter,Depends,status
 from fastapi_jwt_auth import AuthJWT
 from fastapi.exceptions import HTTPException
 from models import User,Order
-from schemas import OrderModel
+from schemas import OrderModel,OrderStatusModel
 from database import engine,Session
 from fastapi.encoders import jsonable_encoder
 
@@ -176,4 +176,52 @@ def update_order(id:int,order:OrderModel,Authorize:AuthJWT=Depends()):
     session.commit()
 
     return jsonable_encoder(order_to_update)
+
+
+@order_router.patch('/order/update/{id}',status_code=status.HTTP_202_ACCEPTED)
+async def update_order_status(id:int,order:OrderStatusModel,Authorize:AuthJWT=Depends()):
+    try:
+        Authorize.jwt_required()
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Token"
+        )
+    
+    current_user = Authorize.get_jwt_subject()
+
+    user= session.query(User).filter(User.username==current_user).first()
+
+    if user.is_staff:
+        order_to_update = session.query(Order).filter(Order.id==id).first()
+        order_to_update.order_status = order.order_status
+
+        session.commit()
+
+        return jsonable_encoder(order_to_update)
+    
+    raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="You are not a Superuser"
+    )
+
+@order_router.delete('/order/delete/{id}/',status_code=status.HTTP_204_NO_CONTENT)
+async def delete_an_order(id:int,Authorize:AuthJWT=Depends()):
+    try:
+        Authorize.jwt_required()
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid Token")
+
+
+    order_to_delete=session.query(Order).filter(Order.id==id).first()
+
+    session.delete(order_to_delete)
+
+    session.commit()
+
+    return order_to_delete
+
+
 
